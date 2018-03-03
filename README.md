@@ -32,6 +32,8 @@ You also need to install [Adafruit_Python_BME280](https://github.com/adafruit/Ad
 
 Copy the `config.yml.default` to `config.yml` and adjust the settings.
 
+##Running
+Simply start main.py as root with python3.
 
 ## Running a systemd unit
 
