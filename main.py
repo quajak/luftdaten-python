@@ -3,6 +3,7 @@
 import sys
 import os
 import yaml
+from datetime import datetime
 
 # Import-Pfade setzen
 sys.path.append(os.path.join(sys.path[0],"sds011"))
@@ -23,12 +24,12 @@ with open("config.yml", 'r') as ymlfile:
 import logging
 logging.basicConfig(level=logging.DEBUG)
 
-bme280 = BME280(
-    address=0x76,
-    t_mode=BME280_OSAMPLE_8,
-    p_mode=BME280_OSAMPLE_8,
-    h_mode=BME280_OSAMPLE_8,
-)
+#bme280 = BME280(
+#    address=0x76,
+#    t_mode=BME280_OSAMPLE_8,
+#    p_mode=BME280_OSAMPLE_8,
+#    h_mode=BME280_OSAMPLE_8,
+#)
 
 # Create an instance of your bme280
 dusty = SDS011('/dev/ttyUSB0')
@@ -55,9 +56,9 @@ class Measurement:
 
         self.pm25_value  = np.mean(pm25_values)
         self.pm10_value  = np.mean(pm10_values)
-        self.temperature = bme280.read_temperature()
-        self.humidity    = bme280.read_humidity()
-        self.pressure    = bme280.read_pressure()
+        self.temperature = 0#bme280.read_temperature()
+        self.humidity    = 0#bme280.read_humidity()
+        self.pressure    = 0#bme280.read_pressure()
 
     def sendInflux(self):
         cfg = config['influxdb']
@@ -99,8 +100,28 @@ class Measurement:
             "pressure":    self.pressure,
             "humidity":    self.humidity,
         })
+        
 
-
+        requests.post("https://pacific-headland-14893.herokuapp.com/push-sensor-data/", json= {
+        "timestamp": str(datetime.now()),
+        "location":{
+        "latitude":"50.123",
+        "longitude": "8.706"
+        }, 
+        "sensor" : {
+        "id":170418
+        },
+        "sensordatavalues": [{
+        "value":self.pm10_value,
+		"value_type": "P1"
+        },
+		{
+		"value":self.pm25_value,
+		"value_type": "P2"
+		}]
+        )
+        
+        
     def __pushLuftdaten(self, url, pin, values):
         requests.post(url,
             json={
@@ -124,11 +145,11 @@ def getSerial():
 def run():
     m = Measurement()
 
-    print('pm2.5     = {:f} '.format(m.pm25_value))
-    print('pm10      = {:f} '.format(m.pm10_value))
-    print('Temp      = {:0.2f} deg C'.format(m.temperature))
-    print('Humidity  = {:0.2f} %'.format(m.humidity))
-    print('Pressure  = {:0.2f} hPa'.format(m.pressure/100))
+    logging.debug('pm2.5     = {:f} '.format(m.pm25_value))
+    logging.debug('pm10      = {:f} '.format(m.pm10_value))
+    logging.debug('Temp      = {:0.2f} deg C'.format(m.temperature))
+    logging.debug('Humidity  = {:0.2f} %'.format(m.humidity))
+    logging.debug('Pressure  = {:0.2f} hPa'.format(m.pressure/100))
 
     m.sendLuftdaten()
     m.sendInflux()
@@ -138,8 +159,8 @@ sensorID  = "raspi-" + getSerial()
 starttime = time.time()
 
 while True:
-    print("running ...")
+    logging.debug("running ...")
     run()
-    time.sleep(60.0 - ((time.time() - starttime) % 60.0))
+    time.sleep(10)
 
-print("Stopped")
+logging.debug("Stopped")
