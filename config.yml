@@ -1,0 +1,9 @@
+luftdaten:
+  enabled: true
+
+influxdb:
+  enabled:  false
+  url:      'http://example.com:8086/write?precision=s&db=sensors'
+  username: 'sensors'
+  password: 'secret'
+  node:     'esp8266-170418'
